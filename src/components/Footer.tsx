@@ -16,7 +16,9 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <h3 className="font-bold text-2xl tracking-tight text-white">NEXA STORE</h3>
+            <Link href="/" className="inline-block">
+              <img src="/logo.png" alt="Nexa Store" className="h-12 w-auto object-contain rounded-lg" />
+            </Link>
             <p className="text-slate-400 text-sm">
               Premium quality products designed for the modern lifestyle. Fast shipping and exceptional customer service.
             </p>

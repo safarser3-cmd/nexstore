@@ -43,18 +43,27 @@ export function Header() {
       <div className="pt-safe pt-3 pb-4 px-4 sm:px-6">
         {/* Top Row: Location + Actions */}
         <div className="flex justify-between items-center mb-4 max-w-7xl mx-auto">
-          <button className="text-left flex flex-col group" onClick={() => setIsModalOpen(true)}>
-            <p className="text-[10px] text-muted-foreground uppercase font-extrabold tracking-wider mb-0.5 group-hover:text-primary transition-colors">Delivery To</p>
-            <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
-              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-              <span className="truncate max-w-[180px] sm:max-w-[250px]">
-                {location.isSet ? `${location.pincode} – ${location.city}` : 'Add Pincode'}
-              </span>
-              <span className="text-[9px] text-muted-foreground ml-0.5">▼</span>
-            </div>
-          </button>
+          <div className="flex items-center gap-4 sm:gap-6">
+            <Link href="/" className="flex-shrink-0">
+              <img src="/logo.png" alt="Nexa Store" className="h-8 sm:h-10 w-auto object-contain rounded-lg" />
+            </Link>
+
+            <button className="hidden sm:flex text-left flex-col group" onClick={() => setIsModalOpen(true)}>
+              <p className="text-[10px] text-muted-foreground uppercase font-extrabold tracking-wider mb-0.5 group-hover:text-primary transition-colors">Delivery To</p>
+              <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                <span className="truncate max-w-[150px]">
+                  {location.isSet ? `${location.pincode} – ${location.city}` : 'Add Pincode'}
+                </span>
+                <span className="text-[9px] text-muted-foreground ml-0.5">▼</span>
+              </div>
+            </button>
+          </div>
 
           <div className="flex items-center gap-2.5">
+            <button className="sm:hidden bg-muted/50 hover:bg-muted p-2.5 rounded-full relative text-foreground transition-colors" onClick={() => setIsModalOpen(true)}>
+              <MapPin className="w-5 h-5" />
+            </button>
             <button className="bg-muted/50 hover:bg-muted p-2.5 rounded-full relative text-foreground transition-colors">
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-background"></span>
