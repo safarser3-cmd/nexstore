@@ -25,6 +25,7 @@ export default function CheckoutPage() {
   }, []);
 
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'prepaid'>('prepaid');
 
   const [formData, setFormData] = useState({
@@ -78,6 +79,7 @@ export default function CheckoutPage() {
 
       const docRef = await addDoc(collection(db, "orders"), orderDoc);
       
+      setIsSuccess(true);
       clearCart();
       
       if (paymentMethod === 'prepaid') {
@@ -88,12 +90,11 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("Error creating order:", error);
       alert("Something went wrong while placing your order.");
-    } finally {
       setLoading(false);
     }
   };
 
-  if (items.length === 0) {
+  if (items.length === 0 && !isSuccess) {
     return (
       <div className="container mx-auto px-4 py-24 text-center max-w-lg">
         <div className="p-6 bg-muted/50 rounded-2xl">
