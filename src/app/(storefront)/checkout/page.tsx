@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ShieldCheck, ArrowRight, Wallet, Banknote, Clock, CreditCard, CheckCircle2, Lock, Truck } from "lucide-react";
+import { toast } from "sonner";
+
+declare global { interface Window { Cashfree?: any; } }
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -26,6 +29,7 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const cashfreeRef = useRef<any>(null);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -37,6 +41,35 @@ export default function CheckoutPage() {
     zipCode: "",
     country: "India",
   });
+
+  useEffect(() => {
+    // Load saved address from local storage
+    const savedAddress = localStorage.getItem("saved_address");
+    if (savedAddress) {
+      try {
+        setFormData(JSON.parse(savedAddress));
+      } catch (e) {
+        console.error("Error parsing saved address");
+      }
+    }
+
+    // Load Cashfree JS SDK
+    const scriptId = "cashfree-sdk";
+    if (!document.getElementById(scriptId)) {
+      const s = document.createElement("script");
+      s.id = scriptId;
+      s.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+      s.async = true;
+      s.onload = () => {
+        cashfreeRef.current = window.Cashfree({ mode: "production" });
+      };
+      document.head.appendChild(s);
+    } else {
+      if (window.Cashfree) {
+        cashfreeRef.current = window.Cashfree({ mode: "production" });
+      }
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -78,13 +111,74 @@ export default function CheckoutPage() {
 
       const docRef = await addDoc(collection(db, "orders"), orderDoc);
       
-      setIsSuccess(true);
-      clearCart();
-      
-      router.push(`/payment/${docRef.id}`);
-    } catch (error) {
+      // Save Address to LocalStorage for future
+      localStorage.setItem("saved_address", JSON.stringify(formData));
+
+      if (!cashfreeRef.current) {
+        toast.error("Payment system is loading. Please wait.");
+        setLoading(false);
+        return;
+      }
+
+      // 1. Create Order on Backend
+      const res = await fetch("/api/checkout/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: docRef.id,
+          amount: finalTotal,
+          customerPhone: formData.phone || "9999999999",
+          customerEmail: formData.email || "customer@example.com",
+          customerName: formData.fullName || "Customer"
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.details || data.error || "Failed to initialize payment");
+      }
+
+      // 2. Open Cashfree Checkout Modal
+      const checkoutResult = await cashfreeRef.current.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: "_modal",
+      });
+
+      if (checkoutResult.error) {
+        toast.error("Payment was not completed. You can try again.");
+        setLoading(false);
+        return;
+      }
+
+      if (checkoutResult.paymentDetails) {
+        // 3. Verify Payment on Backend
+        const verifyRes = await fetch("/api/checkout/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: docRef.id }),
+        });
+
+        const verifyData = await verifyRes.json();
+        
+        if (verifyData.status === "PAID") {
+          // Update order status in Firebase
+          await updateDoc(doc(db, "orders", docRef.id), {
+            status: "Processing",
+            paymentStatus: "PAID",
+            updatedAt: Date.now()
+          });
+          
+          setIsSuccess(true);
+          clearCart();
+          router.push(`/order-success/${docRef.id}`);
+        } else {
+          toast.error(`Payment not completed. Status: ${verifyData.status}`);
+          setLoading(false);
+        }
+      }
+    } catch (error: any) {
       console.error("Error creating order:", error);
-      alert("Something went wrong while placing your order.");
+      toast.error(error.message || "Something went wrong while placing your order.");
       setLoading(false);
     }
   };
@@ -227,7 +321,7 @@ export default function CheckoutPage() {
                   className="w-full h-16 text-xl font-bold rounded-xl shadow-[0_0_30px_rgba(var(--primary),0.3)] transition-all hover:scale-[1.02]"
                   disabled={loading}
                 >
-                  {loading ? 'Processing...' : 'Place Order Now'}
+                  {loading ? 'Processing...' : `Pay ₹${finalTotal}`}
                 </Button>
                 
                 {/* Trust Badges */}
