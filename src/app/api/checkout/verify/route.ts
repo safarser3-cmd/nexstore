@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Cashfree, CFEnvironment } from "cashfree-pg";
 
-// Initialize Cashfree
-const cashfree = new Cashfree(
-  CFEnvironment.PRODUCTION,
-  process.env.CASHFREE_APP_ID || "",
-  process.env.CASHFREE_SECRET_KEY || ""
-);
-
 export async function POST(req: NextRequest) {
   try {
+    const cashfree = new Cashfree(
+      CFEnvironment.PRODUCTION,
+      process.env.CASHFREE_APP_ID || "",
+      process.env.CASHFREE_SECRET_KEY || ""
+    );
+    cashfree.XApiVersion = "2025-01-01";
+
     const body = await req.json();
     const { orderId } = body;
 

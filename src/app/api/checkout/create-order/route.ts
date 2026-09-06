@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Cashfree, CFEnvironment } from "cashfree-pg";
 
-// Initialize Cashfree
-const cashfree = new Cashfree(
-  CFEnvironment.PRODUCTION,
-  process.env.CASHFREE_APP_ID || "",
-  process.env.CASHFREE_SECRET_KEY || ""
-);
-
 export async function POST(req: NextRequest) {
   try {
+    // Initialize Cashfree dynamically inside the handler for Vercel
+    const cashfree = new Cashfree(
+      CFEnvironment.PRODUCTION,
+      process.env.CASHFREE_APP_ID || "",
+      process.env.CASHFREE_SECRET_KEY || ""
+    );
+    cashfree.XApiVersion = "2025-01-01";
+
     const body = await req.json();
     const { orderId, amount, customerPhone, customerEmail, customerName } = body;
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     const request = {
-      order_amount: amount,
+      order_amount: parseFloat(amount),
       order_currency: "INR",
       order_id: orderId,
       customer_details: {
@@ -39,7 +40,13 @@ export async function POST(req: NextRequest) {
       orderId: response.data.order_id
     });
   } catch (error: any) {
-    console.error("Error creating Cashfree order:", error.response?.data || error.message);
-    return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+    console.error("Error creating Cashfree order:", error.response?.data || error.message || error);
+    return NextResponse.json(
+      { 
+        error: "Failed to create order", 
+        details: error.response?.data?.message || error.message || "Unknown error"
+      },
+      { status: 500 }
+    );
   }
 }
