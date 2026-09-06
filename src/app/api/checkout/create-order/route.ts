@@ -28,8 +28,7 @@ export async function POST(req: NextRequest) {
         customer_name: customerName || "Customer"
       },
       order_meta: {
-        payment_methods: "upi", // Restrict to UPI only
-        return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/payment/${orderId}?status=return`
+        payment_methods: "upi" // Restrict to UPI only
       }
     };
 
