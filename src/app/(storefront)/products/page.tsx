@@ -85,9 +85,9 @@ export default function AllProductsPage() {
                   onClick={(e) => {
                     e.preventDefault();
                     addItem({ 
-                      productId: product.id, 
+                      productId: product.id as string, 
                       name: product.name, 
-                      sku: product.id,
+                      sku: product.id as string,
                       price: product.salePrice || product.price, 
                       quantity: 1,
                       imageUrl: product.images?.[0] || "" 
