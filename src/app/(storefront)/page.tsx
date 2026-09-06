@@ -269,9 +269,9 @@ export default function HomePage() {
                   </Link>
                   
                   <div className="flex items-center justify-between pt-1">
-                    <div className="font-extrabold text-foreground">
-                      ${product.salePrice || product.price}
-                    </div>
+                    <span className="font-extrabold text-[15px] text-foreground">
+                      ₹{product.salePrice || product.price}
+                    </span>
                     {qtyInCart > 0 ? (
                       <div className="flex items-center gap-1">
                         <button 

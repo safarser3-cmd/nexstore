@@ -151,9 +151,9 @@ export default function ProductDetailPage() {
 
           {/* Price */}
           <div className="flex items-end gap-3">
-            <span className="text-3xl md:text-4xl font-extrabold text-primary">${finalPrice.toFixed(2)}</span>
+            <span className="text-3xl md:text-4xl font-extrabold text-primary">₹{finalPrice.toFixed(2)}</span>
             {product.salePrice && (
-              <span className="text-lg text-muted-foreground line-through mb-1">${product.price.toFixed(2)}</span>
+              <span className="text-lg text-muted-foreground line-through mb-1">₹{product.price.toFixed(2)}</span>
             )}
           </div>
 
@@ -208,7 +208,7 @@ export default function ProductDetailPage() {
               disabled={product.inventory <= 0}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-              Add to Cart — ${finalPrice.toFixed(2)}
+              Add to Cart — ₹{finalPrice.toFixed(2)}
             </Button>
           </div>
 
@@ -234,7 +234,7 @@ export default function ProductDetailPage() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 p-5 bg-background rounded-t-3xl border-t z-50 flex items-center justify-between shadow-[0_-15px_40px_rgba(0,0,0,0.06)]">
         <div className="flex flex-col gap-0.5">
           <span className="text-xs text-muted-foreground font-medium">Total Price</span>
-          <span className="font-extrabold text-2xl text-foreground">${finalPrice.toFixed(2)}</span>
+          <span className="font-extrabold text-2xl text-foreground">₹{finalPrice.toFixed(2)}</span>
         </div>
         <Button 
           size="lg" 

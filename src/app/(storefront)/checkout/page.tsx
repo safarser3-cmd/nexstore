@@ -26,7 +26,6 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'prepaid'>('prepaid');
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -44,7 +43,7 @@ export default function CheckoutPage() {
   };
 
   const SHIPPING_FEE = cartTotal > 999 ? 0 : 99;
-  const PREPAID_DISCOUNT = paymentMethod === 'prepaid' ? 30 : 0;
+  const PREPAID_DISCOUNT = 0;
   
   const finalTotal = cartTotal + SHIPPING_FEE - PREPAID_DISCOUNT - couponDiscount;
 
@@ -72,7 +71,7 @@ export default function CheckoutPage() {
           country: formData.country,
           phone: formData.phone,
         },
-        paymentMethod: paymentMethod,
+        paymentMethod: 'prepaid',
         status: 'Pending',
         createdAt: Date.now()
       };
@@ -82,11 +81,7 @@ export default function CheckoutPage() {
       setIsSuccess(true);
       clearCart();
       
-      if (paymentMethod === 'prepaid') {
-        router.push(`/payment/${docRef.id}`);
-      } else {
-        router.push(`/order-success/${docRef.id}`);
-      }
+      router.push(`/payment/${docRef.id}`);
     } catch (error) {
       console.error("Error creating order:", error);
       alert("Something went wrong while placing your order.");
@@ -164,54 +159,7 @@ export default function CheckoutPage() {
               </CardContent>
             </Card>
 
-            <div className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payment Method</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  
-                  <div 
-                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${paymentMethod === 'prepaid' ? 'border-primary bg-primary/5 ring-4 ring-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.2)]' : 'border-border hover:border-primary/50'}`}
-                    onClick={() => setPaymentMethod('prepaid')}
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${paymentMethod === 'prepaid' ? 'border-primary bg-primary' : 'border-muted-foreground'}`}>
-                        {paymentMethod === 'prepaid' && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
-                      </div>
-                      <CreditCard className={`w-6 h-6 ${paymentMethod === 'prepaid' ? 'text-primary' : 'text-muted-foreground'}`} />
-                      <span className="font-bold text-lg">Online Payment (UPI/Card)</span>
-                    </div>
-                    <p className="text-sm text-primary font-bold pl-8 bg-primary/10 inline-block px-2 py-1 rounded ml-8 mt-1">
-                      🔥 EXTRA ₹30 DISCOUNT APPLIED!
-                    </p>
-                  </div>
 
-                  <label 
-                    className={`flex items-start p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:border-primary/50'}`}
-                  >
-                    <div className="flex h-5 items-center mr-4">
-                      <input 
-                        type="radio" 
-                        name="payment" 
-                        value="cod"
-                        className="w-4 h-4 text-primary"
-                        checked={paymentMethod === 'cod'}
-                        onChange={() => setPaymentMethod('cod')}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Banknote className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-semibold">Cash on Delivery (COD)</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Pay when your order arrives. Standard fees apply.</p>
-                    </div>
-                  </label>
-                  
-                </CardContent>
-              </Card>
-            </div>
           </form>
         </div>
 
@@ -263,12 +211,7 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {paymentMethod === 'prepaid' && (
-                    <div className="flex justify-between text-green-600 font-medium bg-green-500/10 p-2 rounded-md -mx-2 px-2">
-                      <span>Online Payment Discount</span>
-                      <span>-₹30</span>
-                    </div>
-                  )}
+
                   
                   <div className="border-t pt-3 mt-3 flex justify-between font-bold text-lg">
                     <span>Total</span>
