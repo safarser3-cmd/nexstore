@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ShieldCheck, Smartphone, CheckCircle2, Loader2, ArrowRight, Truck } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Loader2, ArrowRight, Truck, Wallet } from "lucide-react";
 import { toast } from "sonner";
+
+declare global { interface Window { Cashfree?: any; } }
 
 export default function PaymentPage() {
   const params = useParams();
@@ -19,12 +18,9 @@ export default function PaymentPage() {
   
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(5 * 60); // 5 minutes
   const [isSuccess, setIsSuccess] = useState(false);
-
-  const UPI_ID = "nexastores@upi";
-  const MERCHANT_NAME = "NexaStore";
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const cashfreeRef = useRef<any>(null);
 
   useEffect(() => {
     async function fetchOrder() {
@@ -48,32 +44,92 @@ export default function PaymentPage() {
   }, [orderId, router]);
 
   useEffect(() => {
-    if (!order || isSuccess) return;
+    // Load Cashfree JS SDK
+    const scriptId = "cashfree-sdk";
+    if (!document.getElementById(scriptId)) {
+      const s = document.createElement("script");
+      s.id = scriptId;
+      s.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+      s.async = true;
+      s.onload = () => {
+        cashfreeRef.current = window.Cashfree({
+          mode: "production", // "production" based on .env keys
+        });
+      };
+      document.head.appendChild(s);
+    } else {
+      if (window.Cashfree) {
+        cashfreeRef.current = window.Cashfree({ mode: "production" });
+      }
+    }
+  }, []);
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleTimeExpired();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  const handlePayment = async () => {
+    if (!cashfreeRef.current) {
+      toast.error("Payment system is still loading. Please wait a moment.");
+      return;
+    }
 
-    return () => clearInterval(timer);
-  }, [order, isSuccess]);
-
-  const handleTimeExpired = async () => {
-    setIsSuccess(true);
+    setPaymentLoading(true);
     try {
-      const docRef = doc(db, "orders", orderId);
-      await updateDoc(docRef, {
-        status: "Awaiting Confirmation",
-        updatedAt: Date.now()
+      // 1. Create Order on Backend
+      const res = await fetch("/api/checkout/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          amount: order.total,
+          customerPhone: order.shippingAddress?.phone || "9999999999",
+          customerEmail: order.shippingAddress?.email || "customer@example.com",
+          customerName: order.shippingAddress?.name || "Customer"
+        }),
       });
-    } catch (error) {
-      console.error("Error updating order:", error);
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to initialize payment");
+      }
+
+      // 2. Open Cashfree Checkout Modal
+      const checkoutResult = await cashfreeRef.current.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: "_modal",
+      });
+
+      if (checkoutResult.error) {
+        toast.error("Payment was not completed. You can try again.");
+        setPaymentLoading(false);
+        return;
+      }
+
+      if (checkoutResult.paymentDetails) {
+        // 3. Verify Payment on Backend
+        const verifyRes = await fetch("/api/checkout/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: data.orderId || orderId }),
+        });
+
+        const verifyData = await verifyRes.json();
+        
+        if (verifyData.status === "PAID") {
+          // Update order status in Firebase
+          const docRef = doc(db, "orders", orderId);
+          await updateDoc(docRef, {
+            status: "Processing", // Mark as Processing after successful payment
+            paymentStatus: "PAID",
+            updatedAt: Date.now()
+          });
+          setIsSuccess(true);
+        } else {
+          toast.error(`Payment not completed. Status: ${verifyData.status}`);
+        }
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Something went wrong.");
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -86,14 +142,6 @@ export default function PaymentPage() {
   }
 
   if (!order) return null;
-
-  const upiString = `upi://pay?pa=${UPI_ID}&pn=${MERCHANT_NAME}&am=${order.total}&cu=INR`;
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
 
   if (isSuccess) {
     return (
@@ -113,9 +161,9 @@ export default function PaymentPage() {
           <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
             <CheckCircle2 className="w-10 h-10 text-green-600" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Order Placed Successfully!</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Payment Successful!</h1>
           <p className="text-muted-foreground text-lg">
-            We have received your payment request. Your order is now being processed.
+            We have received your payment. Your order is now being processed.
           </p>
         </div>
         <Button 
@@ -138,44 +186,30 @@ export default function PaymentPage() {
 
       <Card className="border-primary/20 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-blue-500 via-primary to-purple-500" />
-        
-        {/* Timer Section */}
-        <div className="bg-muted/50 p-3 text-center border-b">
-          <p className="text-sm font-semibold text-muted-foreground mb-1">Time remaining to pay</p>
-          <div className="text-3xl font-mono font-bold text-primary tracking-wider">
-            {formatTime(timeLeft)}
-          </div>
-        </div>
 
-        <CardHeader className="text-center pb-2">
-          <CardTitle>Pay via UPI</CardTitle>
-          <CardDescription className="font-medium text-foreground">
+        <CardHeader className="text-center pb-2 pt-6">
+          <CardTitle>Pay Securely with Cashfree</CardTitle>
+          <CardDescription className="font-medium text-foreground mt-2">
             Amount to pay: <span className="text-xl font-bold text-primary">₹{order.total}</span>
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-6 pt-4">
           
-          {/* Desktop QR Code */}
-          <div className="hidden md:flex flex-col items-center space-y-4">
-            <div className="p-4 bg-white rounded-xl shadow-sm border">
-              <QRCodeSVG value={upiString} size={200} />
-            </div>
-            <p className="text-sm text-muted-foreground font-medium">Scan with any UPI App</p>
-          </div>
-
-          {/* Mobile Deep Link Button */}
-          <div className="md:hidden w-full flex flex-col items-center space-y-4">
-            <a 
-              href={upiString} 
-              className="w-full flex items-center justify-center gap-2 h-14 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-all"
-            >
-              <Smartphone className="w-5 h-5" /> Pay ₹{order.total} with UPI App
-            </a>
-            <p className="text-xs text-muted-foreground">Tap above to open your UPI app directly</p>
-          </div>
+          <Button 
+            size="lg" 
+            className="w-full h-14 text-lg font-bold rounded-xl shadow-lg shadow-primary/30"
+            onClick={handlePayment}
+            disabled={paymentLoading}
+          >
+            {paymentLoading ? (
+              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</>
+            ) : (
+              <><Wallet className="mr-2 h-5 w-5" /> Pay ₹{order.total}</>
+            )}
+          </Button>
           
           <div className="flex items-center gap-2 text-xs font-bold text-green-600 bg-green-500/10 px-4 py-2 rounded-full w-full justify-center">
-            <ShieldCheck className="w-4 h-4" /> 100% Secure Direct Bank Transfer
+            <ShieldCheck className="w-4 h-4" /> 100% Secure Payment via Cashfree
           </div>
         </CardContent>
       </Card>
