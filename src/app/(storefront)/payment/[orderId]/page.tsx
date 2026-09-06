@@ -80,8 +80,8 @@ export default function PaymentPage() {
           orderId,
           amount: order.total,
           customerPhone: order.shippingAddress?.phone || "9999999999",
-          customerEmail: order.shippingAddress?.email || "customer@example.com",
-          customerName: order.shippingAddress?.name || "Customer"
+          customerEmail: order.customerId || "customer@example.com",
+          customerName: order.shippingAddress?.fullName || "Customer"
         }),
       });
 
