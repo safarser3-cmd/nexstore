@@ -12,7 +12,7 @@ import { ShoppingCart } from "lucide-react";
 export default function AllProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addToCart } = useCart();
+  const { addItem } = useCart();
 
   useEffect(() => {
     async function fetchProducts() {
@@ -84,10 +84,12 @@ export default function AllProductsPage() {
                   size="sm"
                   onClick={(e) => {
                     e.preventDefault();
-                    addToCart({ 
-                      id: product.id, 
+                    addItem({ 
+                      productId: product.id, 
                       name: product.name, 
+                      sku: product.id,
                       price: product.salePrice || product.price, 
+                      quantity: 1,
                       imageUrl: product.images?.[0] || "" 
                     });
                   }}
