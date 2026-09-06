@@ -5,8 +5,8 @@ export async function POST(req: NextRequest) {
   try {
     const cashfree = new Cashfree(
       CFEnvironment.PRODUCTION,
-      process.env.CASHFREE_APP_ID || "",
-      process.env.CASHFREE_SECRET_KEY || ""
+      (process.env.CASHFREE_APP_ID || "").trim(),
+      (process.env.CASHFREE_SECRET_KEY || "").trim()
     );
     cashfree.XApiVersion = "2025-01-01";
 
