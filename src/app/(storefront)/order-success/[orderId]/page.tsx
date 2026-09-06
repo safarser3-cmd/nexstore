@@ -58,7 +58,7 @@ export default function OrderSuccessPage() {
       </div>
 
       <div className="space-y-3">
-        <h1 className="text-4xl font-extrabold tracking-tight">Order Confirmed!</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight text-green-600">Payment Completed!</h1>
         <p className="text-muted-foreground text-lg">
           Thank you for shopping with us. Your order has been successfully placed.
         </p>
@@ -95,19 +95,19 @@ export default function OrderSuccessPage() {
             </div>
           </div>
 
-          <div className="flex justify-center gap-6 text-sm font-medium text-muted-foreground">
+          <div className="flex justify-center gap-6 text-sm font-medium text-muted-foreground mt-4">
             <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <Package className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
-              Preparing
+              Paid
             </div>
-            <div className="w-12 border-t-2 border-dashed border-muted-foreground/30 mt-5" />
-            <div className="flex flex-col items-center gap-2 opacity-50">
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <Truck className="w-5 h-5" />
+            <div className="w-16 border-t-2 border-dashed border-primary/40 mt-6" />
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <Truck className="w-6 h-6 animate-bounce" />
               </div>
-              Shipped
+              Processing
             </div>
           </div>
         </CardContent>

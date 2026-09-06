@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, MapPin, Search, SlidersHorizontal, ShoppingCart } from "lucide-react";
+import { Bell, MapPin, Search, SlidersHorizontal, ShoppingCart, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/CartContext";
 import { useLocation } from "@/context/LocationContext";
@@ -75,6 +75,9 @@ export function Header() {
                   {cartCount}
                 </span>
               )}
+            </Link>
+            <Link href="/profile" className="hidden sm:flex bg-muted/50 hover:bg-muted p-2.5 rounded-full relative text-foreground transition-colors">
+              <User className="w-5 h-5" />
             </Link>
           </div>
         </div>

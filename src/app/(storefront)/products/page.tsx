@@ -6,10 +6,13 @@ import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Product } from "@/types";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/context/CartContext";
+import { ShoppingCart } from "lucide-react";
 
 export default function AllProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     async function fetchProducts() {
@@ -76,6 +79,21 @@ export default function AllProductsPage() {
                     <span className="text-muted-foreground line-through ml-2 text-xs">₹{product.price}</span>
                   )}
                 </div>
+                <Button 
+                  className="w-full mt-2 font-medium" 
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    addToCart({ 
+                      id: product.id, 
+                      name: product.name, 
+                      price: product.salePrice || product.price, 
+                      imageUrl: product.images?.[0] || "" 
+                    });
+                  }}
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart
+                </Button>
               </div>
             </div>
           ))

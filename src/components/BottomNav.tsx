@@ -13,6 +13,7 @@ export function BottomNav() {
     { icon: Home, label: "Home", href: "/" },
     { icon: ShoppingBag, label: "Cart", href: "/cart" },
     { icon: MessageSquare, label: "Chat", href: "/chat" },
+    { icon: User, label: "Profile", href: "/profile" },
   ];
 
   // Hide bottom nav on checkout page to avoid overlapping the payment forms
