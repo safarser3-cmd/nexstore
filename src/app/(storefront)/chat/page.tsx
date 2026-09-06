@@ -74,7 +74,7 @@ export default function ChatPage() {
       {/* FAQs */}
       <div className="space-y-6 pt-8 border-t">
         <h2 className="text-2xl font-bold text-center">Frequently Asked Questions</h2>
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion className="w-full">
           <AccordionItem value="item-1">
             <AccordionTrigger>How long does shipping take?</AccordionTrigger>
             <AccordionContent>
